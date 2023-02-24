@@ -165,8 +165,6 @@ Sort By：每个Reducer内部进行排序，对全局结果集来说不是排序
 
 ​       注意，Hive要求DISTRIBUTE BY语句要写在SORT BY语句之前。
 
-
-
 当distribute by和sorts by字段相同时，可以使用cluster by方式。
 
 cluster by除了具有distribute by的功能外还兼具sort by的功能。但是排序只能是升序排序，不能指定排序规则为ASC或者DESC。
@@ -336,44 +334,6 @@ ROW_NUMBER() 会根据顺序计算  1   2   3   4
 ​           一进多出
 
 ​           如lateral view explore()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
