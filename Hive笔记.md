@@ -50,7 +50,7 @@ load data local inpath '/stu.txt' into table stu   将本地的stu.txt放入表s
 
 
 
-# 3.
+# 3.Hive数据类型
 
 Hive基本数据类型：
 
@@ -164,6 +164,8 @@ Sort By：每个Reducer内部进行排序，对全局结果集来说不是排序
 分区排序：Distribute By：类似MR中partition，进行分区，结合sort by使用。
 
 ​       注意，Hive要求DISTRIBUTE BY语句要写在SORT BY语句之前。
+
+
 
 当distribute by和sorts by字段相同时，可以使用cluster by方式。
 
@@ -334,6 +336,112 @@ ROW_NUMBER() 会根据顺序计算  1   2   3   4
 ​           一进多出
 
 ​           如lateral view explore()
+
+
+
+#### UDF：自定义UDF函数不能跨库
+
+临时函数是一次性的，重新进入hive就会消失。
+
+
+
+#### UDTF：一进多出。
+
+例子：line："hello,world,hadoop,hive"将其输出为
+
+hello
+
+world
+
+hadoop
+
+hive
+
+自定义一个UDTF实现将一个任意分割符的字符串切割成独立的单词。
+
+
+
+//定义输出数据的列名
+
+List<String> fieldNames = new ArrayList<>();
+
+filedNames.add("word");
+
+
+
+//定义输出数据的类型
+
+List<ObjectInspector> fieldOIs = new ArrayList<>();
+
+fieldOIs.add(PrimitiveObjectInspectorFactory.java<font color="red">String</font>ObjectInspector);
+
+ //这个String决定函数输出将以String类型输出，如果输出为 1  2这种数字，则可以用int ,double亦可
+
+
+
+# 8.压缩和存储
+
+#### 列式存储和行式存储
+
+Hive支持的存储数的格式主要有：TEXTFILE 、SEQUENCEFILE、ORC、PARQUET。
+
+![行存列存](C:\Users\ouyangyuxin\Desktop\行存列存.png)
+
+如图所示左边为逻辑表，右边第一个为行式存储，第二个为列式存储。
+
+1．行存储的特点
+
+查询满足条件的一整行数据的时候，列存储则需要去每个聚集的字段找到对应的每个列的值，行存储只需要找到其中一个值，其余的值都在相邻地方，所以此时行存储查询的速度更快。
+
+2．列存储的特点
+
+因为每个字段的数据聚集存储，在查询只需要少数几个字段的时候，能大大减少读取的数据量；每个字段的数据类型一定是相同的，列式存储可以针对性的设计更好的设计压缩算法。
+
+TEXTFILE和SEQUENCEFILE的存储格式都是基于行存储的；
+
+ORC和PARQUET是基于列式存储的。
+
+
+
+orc存储文件默认采用<font color="red">ZLIB压缩。比snappy压缩的小。</font>
+
+
+
+stored as orc tblproperties ("orc.compress"="SNAPPY");
+
+存储方式和压缩总结:
+
+<font color="red">在实际的项目开发当中，hive表的数据存储格式一般选择：orc或parquet。压缩方式一般选择snappy，lzo。</font>
+
+
+
+# 9.调优
+
+## Fetch抓取
+
+Fetch抓取是指，<font color="red">Hive中对某些情况的查询可以不必使用MapReduce计算。</font>例如：SELECT * FROM employees;在这种情况下，Hive可以简单地读取employee对应的存储目录下的文件，然后输出查询结果到控制台。
+
+### 本地模式
+
+对于大多数这种情况，<font color="red">Hive可以通过本地模式在单台机器上处理所有的任务。对于小数据集，执行时间可以明显被缩短。用户可以通过设置hive.exec.mode.local.auto的值为true，来让Hive在适当的时候自动启动这个优化。</font>
+
+### 
+
+6.MAP JOIN
+
+![img](https://pic1.zhimg.com/80/v2-8e984a7a8fd0f9e905c0683086597c30_720w.webp)
+
+**MapJoin简单说就是在Map阶段将小表读入内存，顺序扫描大表完成Join。**
+
+上图是Hive MapJoin的原理图，出自Facebook工程师Liyin Tang的一篇介绍Join优化的slice，从图中可以看出MapJoin分为两个阶段：
+
+（1）通过MapReduce Local Task，将小表读入内存，生成HashTableFiles上传至Distributed Cache中，这里会对HashTableFiles进行压缩。
+
+（2）MapReduce Job在Map阶段，每个Mapper从Distributed Cache读取HashTableFiles到内存中，顺序扫描大表，在Map阶段直接进行Join，将数据传递给下一个MapReduce任务。
+
+也就是在map端进行join避免了shuffle。
+
+
 
 
 
